@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTrack - Panel de Control</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1 fw-bold">📅 TaskTrack</span>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">¡Bienvenido, <strong>{{ session['usuario_nombre'] }}</strong>!</span>
+                <a href="/logout" class="btn btn-outline-danger btn-sm">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- MENSAJES FLASH GENERALES -->
+        {% with messages = get_flashed_messages(category_filter=['dashboard']) %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- CONTENEDORES DE RESUMEN -->
+        <div class="row text-center g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-uppercase small mb-1">Tareas Totales</h6>
+                        <h2 class="fw-bold mb-0">{{ resumen.totales }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-uppercase small mb-1">Pendientes</h6>
+                        <h2 class="fw-bold mb-0">{{ resumen.pendientes }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-uppercase small mb-1">En Progreso</h6>
+                        <h2 class="fw-bold mb-0">{{ resumen.en_progreso }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-uppercase small mb-1">Completadas</h6>
+                        <h2 class="fw-bold mb-0">{{ resumen.completadas }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENCABEZADO DE SECCIÓN -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-semibold text-secondary mb-0">Listado General de Tareas</h3>
+            <a href="/tareas/nueva" class="btn btn-primary fw-bold">+ Añadir Nueva Tarea</a>
+        </div>
+
+        <!-- TABLA DE ELEMENTOS -->
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Título</th>
+                            <th>Categoría</th>
+                            <th>Prioridad</th>
+                            <th>Fecha Límite</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if tareas %}
+                            {% for tarea in tareas %}
+                            <tr>
+                                <td>
+                                    <a href="/tareas/{{ tarea.id_tarea }}" class="fw-bold text-decoration-none text-dark">
+                                        {{ tarea.titulo }}
+                                    </a>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ tarea.nombre_categoria }}</span></td>
+                                <td>
+                                    <span class="badge {% if tarea.nombre_prioridad == 'Alta' %}bg-danger{% elif tarea.nombre_prioridad == 'Media' %}bg-warning text-dark{% else %}bg-info text-white{% endif %}">
+                                        {{ tarea.nombre_prioridad }}
+                                    </span>
+                                </td>
+                                <td class="text-muted">{{ tarea.fecha_limite.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <span class="fw-semibold {% if tarea.nombre_estado == 'Completada' %}text-success{% elif tarea.nombre_estado == 'En progreso' %}text-info{% else %}text-warning{% endif %}">
+                                        ● {{ tarea.nombre_estado }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="/tareas/{{ tarea.id_tarea }}" class="btn btn-light btn-sm border">Ver</a>
+                                    
+                                    {% if tarea.id_user == session['usuario_id'] %}
+                                        <a href="/tareas/editar/{_tarea.id_tarea_}" class="btn btn-outline-secondary btn-sm" href="/tareas/editar/{{ tarea.id_tarea }}">Editar</a>
+                                        {% if tarea.nombre_estado != 'Completada' %}
+                                            <a href="/tareas/completar/{{ tarea.id_tarea }}" class="btn btn-outline-success btn-sm">✓ Listo</a>
+                                        {% endif %}
+                                        <a href="/tareas/eliminar/{{ tarea.id_tarea }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar esta tarea?')">Eliminar</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">No se han registrado tareas en la plataforma todavía.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

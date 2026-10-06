@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTrack - Login / Registro</title>
+    <!-- Enlace específico de Bootstrap 5 solicitado -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <!-- Iconos integrados nativos para la caja de verificación del logo -->
+    <link rel="stylesheet" href="https://jsdelivr.net">
+    <style>
+        /* Estilos personalizados para emular fielmente el trazo del wireframe original */
+        .wireframe-card {
+            background-color: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 6px;
+            padding: 24px;
+            height: 100%;
+        }
+        .wireframe-input {
+            border: 1px solid #000000 !important;
+            border-radius: 2px !important;
+        }
+        .wireframe-btn {
+            background-color: #2b2b2b !important;
+            border: 1px solid #000000 !important;
+            color: #ffffff !important;
+            border-radius: 4px !important;
+            font-weight: 500;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        .wireframe-btn:hover {
+            background-color: #1a1a1a !important;
+        }
+        .validation-box {
+            background-color: #ffd54f !important;
+            border: 1px solid #000000;
+            border-radius: 0px;
+            padding: 16px;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5" style="max-width: 760px;">
+        
+        <!-- LOGO Y SUBTÍTULO SUPERIOR DEL WIREFRAME -->
+        <header class="text-center mb-4">
+            <h1 class="h2 fw-bold text-dark mb-0">
+                <i class="bi bi-check-square-fill me-2"></i>TaskTrack
+            </h1>
+            <p class="text-secondary small mt-1">Organiza tus tareas y proyectos</p>
+        </header>
+
+        <!-- SECCIÓN CENTRAL DE FORMULARIOS -->
+        <div class="row g-4">
+            
+            <!-- FORMULARIO CREAR CUENTA -->
+            <div class="col-md-6">
+                <div class="wireframe-card d-flex flex-column justify-content-between">
+                    <div>
+                        <h2 class="h4 fw-bold text-dark mb-4">Crear Cuenta</h2>
+                        
+                        <form action="/registrar" method="POST">
+                            <div class="mb-2 row align-items-center">
+                                <label for="nombre" class="col-sm-5 col-form-label small text-dark py-1">Nombre</label>
+                                <div class="col-sm-7">
+                                    <input type="text" name="nombre" id="nombre" class="form-control form-control-sm wireframe-input" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-2 row align-items-center">
+                                <label for="apellido" class="col-sm-5 col-form-label small text-dark py-1">Apellido</label>
+                                <div class="col-sm-7">
+                                    <input type="text" name="apellido" id="apellido" class="form-control form-control-sm wireframe-input" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-2 row align-items-center">
+                                <label for="email_reg" class="col-sm-5 col-form-label small text-dark py-1">E-mail</label>
+                                <div class="col-sm-7">
+                                    <input type="email" name="email" id="email_reg" class="form-control form-control-sm wireframe-input" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="mb-2 row align-items-center">
+                                <label for="password_reg" class="col-sm-5 col-form-label small text-dark py-1">Contraseña</label>
+                                <div class="col-sm-7">
+                                    <input type="password" name="password" id="password_reg" class="form-control form-control-sm wireframe-input" required>
+                                </div>
+                            </div>
+                            <div class="mb-4 row align-items-start">
+                                <label for="confirm_password" class="col-sm-5 col-form-label small text-dark lh-sm py-1">Confirmar Contraseña</label>
+                                <div class="col-sm-7">
+                                    <input type="password" name="confirm_password" id="confirm_password" class="form-control form-control-sm wireframe-input" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn wireframe-btn w-100 btn-sm mb-2">Registrarse</button>
+                        </form>
+                    </div>
+                    
+                    <div class="text-center mt-2">
+                        <a href="#email_login" class="text-decoration-none small link-primary" style="font-size: 0.8rem;">¿Ya tienes cuenta? Inicia sesión</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMULARIO INICIAR SESIÓN -->
+            <div class="col-md-6">
+                <div class="wireframe-card d-flex flex-column justify-content-between">
+                    <div>
+                        <h2 class="h4 fw-bold text-dark mb-4">Iniciar Sesión</h2>
+                        
+                        <form action="/login" method="POST">
+                            <div class="mb-3">
+                                <label for="email_login" class="form-label small text-dark mb-1">E-mail</label>
+                                <input type="email" name="email" id="email_login" class="form-control form-control-sm wireframe-input" required autocomplete="off">
+                            </div>
+                            <div class="mb-4">
+                                <label for="password_login" class="form-label small text-dark mb-1">Contraseña</label>
+                                <input type="password" name="password" id="password_login" class="form-control form-control-sm wireframe-input" required>
+                            </div>
+                            <button type="submit" class="btn wireframe-btn w-100 btn-sm mb-2">Iniciar Sesión</button>
+                        </form>
+                    </div>
+                    
+                    <div class="text-center mt-2">
+                        <a href="#nombre" class="text-decoration-none small link-primary" style="font-size: 0.8rem;">¿No tienes cuenta? Regístrate</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RECUADROS INFERIORES AMARILLOS DE REGLAS DE NEGOCIO -->
+        <div class="row mt-4 g-3">
+            
+            <!-- ALERTA VALIDACIONES REGISTRO -->
+            <div class="col-md-6">
+                <div class="validation-box small shadow-sm">
+                    <div class="fw-bold text-dark mb-1">Validaciones de Registro:</div>
+                    <div class="lh-sm text-dark font-monospace" style="font-size: 0.8rem;">
+                        - Nombre y apellido (min. 2 caracteres)<br>
+                        - Email con formato válido y único<br>
+                        - Contraseña y confirmación iguales<br>
+                        - Mostrar mensajes de error con flash
+                    </div>
+                    
+                    <!-- AREA DE DESPLIEGUE MENSAJES FLASH -->
+                    {% with messages = get_flashed_messages(category_filter=['registro']) %}
+                        {% if messages %}
+                            <div class="mt-2 pt-2 border-top border-dark border-opacity-20 text-danger fw-bold">
+                                {% for msg in messages %}
+                                    <div class="mb-1">⚠️ {{ msg }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- ALERTA VALIDACIONES LOGIN -->
+            <div class="col-md-6">
+                <div class="validation-box small shadow-sm">
+                    <div class="fw-bold text-dark mb-1">Validaciones de Inicio de Sesión:</div>
+                    <div class="lh-sm text-dark font-monospace" style="font-size: 0.8rem;">
+                        - El email debe estar registrado<br>
+                        - La contraseña debe ser la correspondiente a la BD
+                    </div>
+                    
+                    <!-- AREA DE DESPLIEGUE MENSAJES FLASH -->
+                    {% with messages = get_flashed_messages(category_filter=['login']) %}
+                        {% if messages %}
+                            <div class="mt-2 pt-2 border-top border-dark border-opacity-20 text-danger fw-bold">
+                                {% for msg in messages %}
+                                    <div class="mb-1">⚠️ {{ msg }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+            
+        </div>
+
+    </div>

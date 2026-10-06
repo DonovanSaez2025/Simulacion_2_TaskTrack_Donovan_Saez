@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTrack - Detalle de Tarea</title>
+    <!-- Bootstrap Style -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light">
+    <!-- NAVEGACIÓN -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm mb-4">
+        <div class="container">
+            <a href="/dashboard" class="navbar-brand mb-0 h1 fw-bold text-decoration-none">📅 TaskTrack</a>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm">Volver al Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row g-4">
+            <!-- COLUMNA IZQUIERDA: DETALLES DE LA TAREA -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                            <div>
+                                <span class="badge bg-secondary mb-2">{{ tarea.nombre_categoria }}</span>
+                                <h1 class="h3 fw-bold text-dark mb-0">{{ tarea.titulo }}</h1>
+                            </div>
+                            <span class="badge {% if tarea.nombre_prioridad == 'Alta' %}bg-danger{% elif tarea.nombre_prioridad == 'Media' %}bg-warning text-dark{% else %}bg-info text-white{% endif %} px-3 py-2 fs-6">
+                                Prioridad {{ tarea.nombre_prioridad }}
+                            </span>
+                        </div>
+
+                        <div class="row mb-4 bg-light p-3 rounded">
+                            <div class="col-6">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Responsable/Creador</small>
+                                <span class="fw-semibold text-secondary">{{ tarea.creador_nombre }}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.75rem;">Fecha Límite</small>
+                                <span class="fw-semibold text-danger">{{ tarea.fecha_limite.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold text-secondary mb-2">Descripción del Trabajo:</h5>
+                        <p class="text-dark bg-white border p-3 rounded" style="white-space: pre-line; min-height: 120px;">{{ tarea.desc_tarea }}</p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <span class="fw-bold">Estado actual: 
+                                <span class="{% if tarea.nombre_estado == 'Completada' %}text-success{% elif tarea.nombre_estado == 'En progreso' %}text-info{% else %}text-warning{% endif %}">
+                                    ● {{ tarea.nombre_estado }}
+                                </span>
+                            </span>
+                            {% if tarea.id_user == session['usuario_id'] %}
+                                <div>
+                                    <a href="/tareas/editar/{{ tarea.id_tarea }}" class="btn btn-warning btn-sm fw-semibold">Editar</a>
+                                    <a href="/tareas/eliminar/{{ tarea.id_tarea }}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar esta tarea?')">Eliminar</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: SECCIÓN DE COMENTARIOS -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0" style="min-height: 400px;">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold text-secondary">💬 Historial de Comentarios</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-between p-3">
+                        
+                        <!-- LISTA DINÁMICA DE COMENTARIOS -->
+                        <div class="mb-3 overflow-auto" style="max-height: 320px;">
+                            {% if comentarios %}
+                                {% for comment in comentarios %}
+                                    <div class="bg-light p-3 rounded mb-2 border-start border-primary border-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <strong class="small text-dark">{{ comment.nombre }} {{ comment.apellido }}</strong>
+                                            <span class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        </div>
+                                        <p class="mb-0 small text-secondary">{{ comment.contenido }}</p>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-center text-muted small my-4">No hay comentarios en esta tarea aún. ¡Escribe el primero abajo!</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- FORMULARIO PARA REGISTRAR COMENTARIO -->
+                        <!-- NOTA: Requiere crear la ruta POST '/comentarios/crear' en tareas.py si deseas procesarlo -->
+                        <form action="/comentarios/crear" method="POST" class="border-top pt-3">
+                            <input type="hidden" name="id_tarea" value="{{ tarea.id_tarea }}">
+                            <div class="input-group">
+                                <input type="text" name="contenido" class="form-control form-control-sm" placeholder="Escribe un mensaje de avance..." required autocomplete="off">
+                                <button class="btn btn-primary btn-sm" type="submit">Enviar</button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

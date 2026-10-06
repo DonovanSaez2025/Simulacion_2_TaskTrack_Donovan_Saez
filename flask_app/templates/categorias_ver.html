@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskTrack - Catálogo de Categorías</title>
+    <!-- Bootstrap Style -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-light">
+    <!-- NAVEGACIÓN -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm mb-4">
+        <div class="container">
+            <a href="/dashboard" class="navbar-brand mb-0 h1 fw-bold text-decoration-none">📅 TaskTrack</a>
+            <a href="/dashboard" class="btn btn-outline-light btn-sm">Volver al Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 900px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark mb-0">🗂️ Categorías de Tareas</h2>
+                <p class="text-muted mb-0">Estructura y etiquetas de organización globales del sistema.</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th style="width: 10%;">ID</th>
+                            <th style="width: 25%;">Nombre Categoría</th>
+                            <th style="width: 50%;">Descripción del Mapeo</th>
+                            <th style="width: 15%;">Configurado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if categorias %}
+                            {% for cat in categorias %}
+                            <tr>
+                                <td class="fw-bold text-secondary">#{{ cat.id_categoria }}</td>
+                                <td>
+                                    <span class="badge bg-dark px-2 py-2 fs-6">{{ cat.nombre_categoria }}</span>
+                                </td>
+                                <td class="text-secondary small">{{ cat.desc_categoria }}</td>
+                                <td class="text-muted small">{{ cat.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No hay categorías maestras dadas de alta en este entorno.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

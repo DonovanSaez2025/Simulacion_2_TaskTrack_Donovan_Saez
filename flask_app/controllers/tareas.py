@@ -1,115 +1,118 @@
+# Importaciones
 from flask import render_template, redirect, request, session, flash
 from flask_app import app
-from flask_app.models.libro import Libro
+from flask_app.models.tarea import Tarea
 from flask_app.config.mysqlconnection import connectToMySQL
 
-SCHEMA = 'esquema_certificacion'
-
-def requerir_login():
-    if 'usuario_id' not in session:
-        flash("Debes iniciar sesión para acceder.", "login_error")
-        return False
-    return True
-
-@app.route('/libros')
+# Ruta para ver todos los libros en el dashboard
+@app.route("/dashboard")
 def dashboard():
-    if not requerir_login():
-        return redirect('/')
+    if "usuario_id" not in session:
+        return redirect("/")
+    todas_tareas = Tarea.obtener_todas_con_relaciones()
+    resumen = {"totales": len(todas_tareas),
+        "pendientes": len([t for t in todas_tareas if t.nombre_estado == "Pendiente"]),
+        "en_progreso": len([t for t in todas_tareas if t.nombre_estado == "En progreso"]),
+        "completadas": len([t for t in todas_tareas if t.nombre_estado == "Completada"])}
+    return render_template("dashboard.html", tareas=todas_tareas, resumen=resumen)
+
+# Ruta para ver los detalles de una tarea específica
+@app.route("/tareas/<int:id_tarea>")
+def ver_detalle_tarea(id_tarea):
+    if "usuario_id" not in session:
+        return redirect("/") 
+    tarea = Tarea.obtener_por_id_con_creador(id_tarea)
+    if not tarea:
+        flash("La tarea solicitada no existe.", "dashboard")
+        return redirect("/dashboard")
+    query_comments = """SELECT comentarios.*, usuarios.nombre, usuarios.apellido 
+        FROM comentarios 
+        JOIN usuarios ON comentarios.id_user = usuarios.id_user 
+        WHERE id_tarea = %(id_tarea)s ORDER BY comentarios.created_at DESC;"""
+    comentarios = connectToMySQL().query_db(query_comments, {"id_tarea": id_tarea})
+    return render_template("tarea_ver.html", tarea=tarea, comentarios=comentarios)
+
+# Ruta para el formulario de creación de las careas
+@app.route("/tareas/nueva")
+def nueva_tarea():
+    if "usuario_id" not in session:
+        return redirect("/")
+    categorias = connectToMySQL().query_db("SELECT * FROM categorias;")
+    prioridades = connectToMySQL().query_db("SELECT * FROM prioridades;")
+    return render_template("crear_tarea.html", categorias=categorias, prioridades=prioridades)
+
+# Ruta para crear una tarea
+@app.route("/tareas/crear", methods=["POST"])
+def crear_tarea():
+    if "usuario_id" not in session:
+        return redirect("/")
+    if not Tarea.validar_tarea(request.form):
+        return redirect("/tareas/nueva")  
+    data = {"titulo": request.form["titulo"],
+        "fecha_limite": request.form["fecha_limite"],
+        "desc_tarea": request.form["desc_tarea"],
+        "id_categoria": request.form["id_categoria"],
+        "id_prioridad": request.form["id_prioridad"],
+        "id_estado": 1,
+        "id_user": session["usuario_id"]}
+    Tarea.guardar(data)
+    return redirect("/dashboard")
+
+# Ruta para el formulario de edición de tareas
+@app.route("/tareas/editar/<int:id_tarea>")
+def editar_tarea(id_tarea):
+    if "usuario_id" not in session:
+        return redirect("/")
+    tarea = Tarea.obtener_por_id_con_creador(id_tarea)
+    if not tarea or tarea.id_user != session["usuario_id"]:
+        flash("Acceso denegado. No tienes permisos para modificar esta tarea.", "dashboard")
+        return redirect("/dashboard")
+    categorias = connectToMySQL().query_db("SELECT * FROM categorias;")
+    prioridades = connectToMySQL().query_db("SELECT * FROM prioridades;")
+    return render_template("editar_tarea.html", tarea=tarea, categorias=categorias, prioridades=prioridades)
+
+# Ruta para actualizar la tarea
+@app.route("/tareas/actualizar/<int:id_tarea>", methods=["POST"])
+def procesar_actualizacion(id_tarea):
+    if "usuario_id" not in session:
+        return redirect("/")
+    tarea = Tarea.obtener_por_id_con_creador(id_tarea)
+    if not tarea or tarea.id_user != session["usuario_id"]:
+        return redirect("/dashboard")
+    if not Tarea.validar_tarea(request.form):
+        return redirect(f"/tareas/editar/{id_tarea}")     
+    data = {"id_tarea": id_tarea,
+        "titulo": request.form["titulo"],
+        "fecha_limite": request.form["fecha_limite"],
+        "desc_tarea": request.form["desc_tarea"],
+        "id_categoria": request.form["id_categoria"],
+        "id_prioridad": request.form["id_prioridad"]}
+    Tarea.actualizar(data)
+    return redirect("/dashboard")
+
+# Ruta para marcar una tarea como completada
+@app.route("/tareas/completar/<int:id_tarea>")
+def marcar_completada(id_tarea):
+    if "usuario_id" not in session:
+        return redirect("/")
+    tarea = Tarea.obtener_por_id_con_creador(id_tarea)
+    if not tarea or tarea.id_user != session["usuario_id"]:
+        return redirect("/dashboard")
+    query = "UPDATE tareas SET id_estado = 3 WHERE id_tarea = %(id_tarea)s;"
+    connectToMySQL().query_db(query, {"id_tarea": id_tarea})
+    return redirect("/dashboard")
+
+# Ruta para eliminar una tarea
+@app.route("/tareas/eliminar/<int:id_tarea>")
+def eliminar_tarea(id_tarea):
+    if "usuario_id" not in session:
+        return redirect("/")
+    tarea = Tarea.obtener_por_id_con_creador(id_tarea)
+    if not tarea or tarea.id_user != session["usuario_id"]:
+        flash("No puedes eliminar tareas pertenecientes a otros perfiles.", "dashboard")
+        return redirect("/dashboard")
     
-    usuario_id = session['usuario_id']
-    mis_libros = Libro.get_mis_libros(usuario_id)
-    libros_comunidad = Libro.get_libros_comunidad(usuario_id)
-    
-    return render_template('libros.html', mis_libros=mis_libros, libros_comunidad=libros_comunidad)
-
-@app.route('/libros/nuevo')
-def nuevo_libro():
-    if not requerir_login():
-        return redirect('/')
-    
-    generos = connectToMySQL(SCHEMA).query_db("SELECT * FROM generos;") or []
-    return render_template('agregar_libro.html', generos=generos)
-
-@app.route('/libros/crear', methods=['POST'])
-def crear_libro():
-    if not requerir_login():
-        return redirect('/')
-
-    if not Libro.validar_libro(request.form):
-        return redirect('/libros/nuevo')
-
-    data = {
-        'titulo_libro': request.form['titulo_libro'],
-        'autor': request.form['autor'],
-        'descripcion_libro': request.form['descripcion_libro'],
-        'fecha_publicacion': request.form['fecha_publicacion'],
-        'id_genero': request.form['id_genero'],
-        'id_usuario': session['usuario_id']
-    }
-    
-    Libro.save(data)
-    return redirect('/libros')
-
-@app.route('/libros/<int:id>')
-def ver_libro(id):
-    if not requerir_login():
-        return redirect('/')
-
-    libro = Libro.get_by_id(id)
-    if not libro:
-        return redirect('/libros')
-
-    return render_template('ver_libro.html', libro=libro)
-
-@app.route('/libros/editar/<int:id>')
-def editar_libro(id):
-    if not requerir_login():
-        return redirect('/')
-
-    libro = Libro.get_by_id(id)
-    if not libro or libro.id_usuario != session['usuario_id']:
-        return redirect('/libros')
-
-    generos = connectToMySQL(SCHEMA).query_db("SELECT * FROM generos;") or []
-    return render_template('editar_libro.html', libro=libro, generos=generos)
-
-@app.route('/libros/actualizar/<int:id>', methods=['POST'])
-def actualizar_libro(id):
-    if not requerir_login():
-        return redirect('/')
-
-    libro = Libro.get_by_id(id)
-    if not libro or libro.id_usuario != session['usuario_id']:
-        return redirect('/libros')
-
-    if not Libro.validar_libro(request.form):
-        return redirect(f'/libros/editar/{id}')
-
-    data = {
-        'id_libro_user': id,
-        'titulo_libro': request.form['titulo_libro'],
-        'autor': request.form['autor'],
-        'descripcion_libro': request.form['descripcion_libro'],
-        'fecha_publicacion': request.form['fecha_publicacion'],
-        'id_genero': request.form['id_genero'],
-        'id_usuario': session['usuario_id']
-    }
-
-    Libro.update(data)
-    return redirect('/libros')
-
-@app.route('/libros/eliminar/<int:id>')
-def eliminar_libro(id):
-    if not requerir_login():
-        return redirect('/')
-
-    Libro.delete(id, session['usuario_id'])
-    return redirect('/libros')
-
-@app.route('/libros/favorito/<int:id>', methods=['POST'])
-def agregar_favorito(id):
-    if not requerir_login():
-        return redirect('/')
-
-    Libro.sumar_favorito(id)
-    return redirect(f'/libros/{id}')
+    # Eliminar los comentarios de la tarea borrada
+    connectToMySQL().query_db("DELETE FROM comentarios WHERE id_tarea = %(id_tarea)s;", {"id_tarea": id_tarea})
+    Tarea.eliminar(id_tarea)
+    return redirect("/dashboard")

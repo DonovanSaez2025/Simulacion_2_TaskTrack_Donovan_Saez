@@ -1,118 +1,98 @@
-from flask_app.config.mysqlconnection import connectToMySQL
-from flask import flash
+# Importaciones
 from datetime import datetime
+from flask import flash
+from flask_app.config.mysqlconnection import connectToMySQL
 
-SCHEMA = 'esquema_certificacion'
-
-class Libro:
+# Clase tarea
+class Tarea:
+    # Método constructor
     def __init__(self, data):
-        self.id_libro_user = data.get('id_libro_user')
-        self.id_libro_comunidad = data.get('id_libro_comunidad')
-        self.titulo_libro = data.get('titulo_libro')
-        self.autor = data.get('autor')
-        # Maneja tanto 'descripcion_libro' como 'descripcion' según la tabla de procedencia
-        self.descripcion_libro = data.get('descripcion_libro') or data.get('descripcion')
-        self.fecha_publicacion = data.get('fecha_publicacion')
-        self.favoritos = data.get('favoritos', 0)
-        self.id_usuario = data.get('id_usuario')
-        self.id_genero = data.get('id_genero')
-        
-        # Atributos poblados con JOINs
-        self.nombre_genero = data.get('nombre_genero', '')
-        self.publicado_por = data.get('publicado_por', '')
+        self.id_tarea = data['id_tarea']
+        self.titulo = data['titulo']
+        self.fecha_limite = data['fecha_limite']
+        self.desc_tarea = data['desc_tarea']
+        self.id_categoria = data['id_categoria']
+        self.id_prioridad = data['id_prioridad']
+        self.id_estado = data['id_estado']
+        self.id_user = data['id_user']
+        self.created_at = data['created_at']
+        self.updated_at = data['updated_at']
+        # Atributos obtenidos por el método join
+        self.nombre_categoria = data.get('nombre_categoria')
+        self.nombre_prioridad = data.get('nombre_prioridad')
+        self.nombre_estado = data.get('nombre_estado')
+        self.creador_nombre = data.get('creador_nombre')
 
+    # Método para guardar la tarea
     @classmethod
-    def save(cls, data):
+    def guardar(cls, data):
+        query = """INSERT INTO tareas (titulo, fecha_limite, desc_tarea, id_categoria, id_prioridad, id_estado, id_user)
+                VALUES (%(titulo)s, %(fecha_limite)s, %(desc_tarea)s, %(id_categoria)s, %(id_prioridad)s, %(id_estado)s, %(id_user)s);"""
+        return connectToMySQL().query_db(query, data)
+
+    # Método para 
+    @classmethod
+    def obtener_todas_con_relaciones(cls):
+        query = """SELECT tareas.*, categorias.nombre_categoria, prioridades.nombre_prioridad, estados.nombre_estado 
+                FROM tareas
+                JOIN categorias ON tareas.id_categoria = categorias.id_categoria
+                JOIN prioridades ON tareas.id_prioridad = prioridades.id_prioridad
+                JOIN estados ON tareas.id_estado = estados.id_estado
+                ORDER BY tareas.fecha_limite ASC;"""
+        resultados = connectToMySQL().query_db(query)
+        tareas = []
+        if resultados:
+            for fila in resultados:
+                tareas.append(cls(fila))
+        return tareas
+
+    # Método para obtener el id con el creador
+    @classmethod
+    def obtener_por_id_con_creador(cls, id_tarea):
         query = """
-        INSERT INTO libros_de_usuario (titulo_libro, autor, descripcion_libro, fecha_publicacion, favoritos, id_usuario, id_genero)
-        VALUES (%(titulo_libro)s, %(autor)s, %(descripcion_libro)s, %(fecha_publicacion)s, 0, %(id_usuario)s, %(id_genero)s);
+            SELECT tareas.*, categorias.nombre_categoria, prioridades.nombre_prioridad, estados.nombre_estado,
+            CONCAT(usuarios.nombre, ' ', usuarios.apellido) AS creador_nombre
+            FROM tareas
+            JOIN categorias ON tareas.id_categoria = categorias.id_categoria
+            JOIN prioridades ON tareas.id_prioridad = prioridades.id_prioridad
+            JOIN estados ON tareas.id_estado = estados.id_estado
+            JOIN usuarios ON tareas.id_user = usuarios.id_user
+            WHERE tareas.id_tarea = %(id_tarea)s;
         """
-        return connectToMySQL(SCHEMA).query_db(query, data)
+        data = {'id_tarea': id_tarea}
+        resultado = connectToMySQL().query_db(query, data)
+        if not resultado or len(resultado) < 1:
+            return False
+        return cls(resultado[0])
 
-    @classmethod
-    def get_mis_libros(cls, id_usuario):
-        query = """
-        SELECT l.*, g.nombre_genero
-        FROM libros_de_usuario l
-        LEFT JOIN generos g ON l.id_genero = g.id_genero
-        WHERE l.id_usuario = %(id_usuario)s;
-        """
-        results = connectToMySQL(SCHEMA).query_db(query, {'id_usuario': id_usuario})
-        return [cls(row) for row in results] if results else []
-
-    @classmethod
-    def get_libros_comunidad(cls, id_usuario):
-        query = """
-        SELECT lc.*, g.nombre_genero, CONCAT(u.nombre, ' ', u.apellido) AS publicado_por
-        FROM libros_comunidad lc
-        JOIN usuarios u ON lc.id_usuario = u.id_usuario
-        LEFT JOIN generos g ON lc.id_genero = g.id_genero
-        WHERE lc.id_usuario != %(id_usuario)s;
-        """
-        results = connectToMySQL(SCHEMA).query_db(query, {'id_usuario': id_usuario})
-        return [cls(row) for row in results] if results else []
-
-    @classmethod
-    def get_by_id(cls, id_libro_user):
-        query = """
-        SELECT l.*, g.nombre_genero, CONCAT(u.nombre, ' ', u.apellido) AS publicado_por
-        FROM libros_de_usuario l
-        JOIN usuarios u ON l.id_usuario = u.id_usuario
-        LEFT JOIN generos g ON l.id_genero = g.id_genero
-        WHERE l.id_libro_user = %(id_libro_user)s;
-        """
-        results = connectToMySQL(SCHEMA).query_db(query, {'id_libro_user': id_libro_user})
-        if not results:
-            return None
-        return cls(results[0])
-
-    @classmethod
-    def update(cls, data):
-        query = """
-        UPDATE libros_de_usuario 
-        SET titulo_libro = %(titulo_libro)s, autor = %(autor)s, descripcion_libro = %(descripcion_libro)s, 
-            fecha_publicacion = %(fecha_publicacion)s, id_genero = %(id_genero)s
-        WHERE id_libro_user = %(id_libro_user)s AND id_usuario = %(id_usuario)s;
-        """
-        return connectToMySQL(SCHEMA).query_db(query, data)
-
-    @classmethod
-    def delete(cls, id_libro_user, id_usuario):
-        query = "DELETE FROM libros_de_usuario WHERE id_libro_user = %(id_libro_user)s AND id_usuario = %(id_usuario)s;"
-        return connectToMySQL(SCHEMA).query_db(query, {'id_libro_user': id_libro_user, 'id_usuario': id_usuario})
-
-    @classmethod
-    def sumar_favorito(cls, id_libro_user):
-        query = "UPDATE libros_de_usuario SET favoritos = favoritos + 1 WHERE id_libro_user = %(id_libro_user)s;"
-        return connectToMySQL(SCHEMA).query_db(query, {'id_libro_user': id_libro_user})
-
+    # Método para validar una tarea
     @staticmethod
-    def validar_libro(data):
-        is_valid = True
+    def validar_tarea(formulario):
+        es_valido = True
         
-        if len(data.get('titulo_libro', '').strip()) < 2:
-            flash("El título debe tener al menos 2 caracteres.", "libro_titulo")
-            is_valid = False
+        # Validar que no hayan campos esté vacío
+        if not formulario.get('titulo') or not formulario.get('id_categoria') or not formulario.get('id_prioridad') or not formulario.get('fecha_limite') or not formulario.get('desc_tarea'):
+            flash("Todos los campos son obligatorios.", "tarea")
+            return False
 
-        if len(data.get('autor', '').strip()) < 2:
-            flash("El autor debe tener al menos 2 caracteres.", "libro_autor")
-            is_valid = False
+        # Validar título
+        if len(formulario['titulo']) < 3:
+            flash("El título debe tener al menos 3 caracteres.", "tarea")
+            es_valido = False
 
-        if not data.get('id_genero'):
-            flash("Debe seleccionar un género.", "libro_genero")
-            is_valid = False
+        # Validar la descripción
+        if len(formulario['desc_tarea']) < 10:
+            flash("La descripción debe tener al menos 10 caracteres.", "tarea")
+            es_valido = False
 
-        if not data.get('fecha_publicacion'):
-            flash("Debe ingresar la fecha de publicación.", "libro_fecha")
-            is_valid = False
-        else:
-            fecha_pub = datetime.strptime(data['fecha_publicacion'], '%Y-%m-%d').date()
-            if fecha_pub > datetime.now().date():
-                flash("La fecha de publicación no puede ser en el futuro.", "libro_fecha")
-                is_valid = False
+        # Validar fecha límite
+        try:
+            fecha_ingresada = datetime.strptime(formulario['fecha_limite'], '%Y-%m-%d').date()
+            if fecha_ingresada < datetime.now().date():
+                flash("La fecha límite no puede ser una fecha pasada.", "tarea")
+                es_valido = False
+        except ValueError:
+            flash("Formato de fecha inválido.", "tarea")
+            es_valido = False
 
-        if len(data.get('descripcion_libro', '').strip()) < 10:
-            flash("La descripción debe tener al menos 10 caracteres.", "libro_descripcion")
-            is_valid = False
-
-        return is_valid
+        return es_valido
