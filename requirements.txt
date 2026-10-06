@@ -1,0 +1,8 @@
+bcrypt==5.0.0
+Flask==3.1.2
+Flask-Bcrypt==1.0.1
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+PyMySQL==1.1.2
+dotenv==1.0.0
+python-dotenv==1.2.1
